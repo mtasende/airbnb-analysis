@@ -65,7 +65,7 @@ Discuss what your project is about, and what interested you in pursuing the proj
 ## How to interact with your project
 When your project isn't meant to be interactive or used for other projects, you should instead talk about the technical details of your project. What were your results? What did you do to improve them? What methods did you try? What worked? What didn't work?
 
-## Licensing, Authors, Acknowledgements, etc.
-You always want to give credit where necessary. Acknowledge other contributors, helpful peers, data providers, etc.
+## License
+Code released under the [MIT](https://github.com/mtasende/airbnb-analysis/blob/master/LICENSE) license.
 
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>

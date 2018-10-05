@@ -2,7 +2,7 @@
 Analysis of open AirBnB data.
 
 ## Installations
-This project was created using Python 3. To create the conda environment:
+This project was created using Python 3. To create the conda environment, and start working:
 ```
 conda env create -f data.yml
 source activate data
@@ -28,8 +28,10 @@ Discuss what your project is about, and what interested you in pursuing the proj
     ├── models             <- Trained and serialized models, model predictions, or model summaries
     │
     ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-    │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-data-exploration`.
+    │   │                     the creator's initials, and a short `-` delimited description, e.g.
+    │   │                     `1.0-jqp-initial-data-exploration`.
+    │   │
+    │   └── scratchpad     <- Only for internal use. Messy and unconventional notebooks.
     │
     ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
     │
@@ -62,10 +64,12 @@ Discuss what your project is about, and what interested you in pursuing the proj
     └── tox.ini            <- tox file with settings for running tox; see tox.testrun.org
 
 
-## How to interact with your project
-When your project isn't meant to be interactive or used for other projects, you should instead talk about the technical details of your project. What were your results? What did you do to improve them? What methods did you try? What worked? What didn't work?
+## How to interact with the project
+The results of the analysis can be found in the _reports_ folder.
+Also, the notebooks in the _notebooks_ folder can be run, in order, to obtain the analysis results.
+The `scratchpad` folder contains notebooks that should be ignored by the regular user.
 
-## License
+## Licensing, Authors, Acknowledgements
 Code released under the [MIT](https://github.com/mtasende/airbnb-analysis/blob/master/LICENSE) license.
 
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>

@@ -1,0 +1,168 @@
+""" Functions to help filling the missing data. """
+import pandas as pd
+from src.data import preprocessing as pp
+from src.data import SEATTLE_LISTINGS_COLS
+
+
+def fill_missing(calendar, listings, reviews):
+    """
+    Fills all the missing data that is filledbefore the feature generation.
+    There may be some missing data that is filled after the feature generation.
+    """
+    calendar = fill_calendar_na(calendar, listings)
+    reviews = fill_reviews_na(reviews)
+    listings = fill_listings_na(listings)
+    return calendar, listings, reviews
+
+
+def fill_listings_na(listings):
+    """ A specific function to fill the listings missing values."""
+    listings_cols_df = pd.read_pickle(SEATTLE_LISTINGS_COLS)
+    listings, listings_cols_df = fill_num_cols(listings, listings_cols_df)
+    listings, listings_cols_df = fill_price_cols(listings, listings_cols_df)
+
+
+    listings_cols_df.to_pickle(SEATTLE_LISTINGS_COLS)
+
+    return listings
+
+
+def fill_reviews_na(reviews):
+    """ A specific function to fill the reviews missing values."""
+    return reviews.dropna()
+
+
+def fill_calendar_na(calendar, listings):
+    """ A specific function to fill the calendar missing values."""
+    new_cal = calendar.copy()
+    new_cal = fill_df_in_time(new_cal)
+    return fill_with_listings(new_cal, listings)
+
+
+def fill_in_time(ts):
+    """ Fills a time series by forward filling and then backfilling"""
+    return ts.fillna(method='ffill').fillna(method='bfill')
+
+
+def get_ts(df, values_col='price'):
+    """
+    Extracts one time series per listing.
+    Args:
+        df(pd.DataFrame): a dataframe with listing_id, date, and a value that
+        changes in time (price, as default).
+        values_col(str): the column to take as dependent variable.
+    Returns:
+        pd.DataFrame: A time series, indexed in dates, has one column per
+        listing.
+    """
+    return pd.pivot_table(data=df,
+                          index='date',
+                          columns='listing_id',
+                          values=values_col)
+
+
+def fill_df_in_time(df, idx_col='listing_id', value_col='price'):
+    """
+    Takes a dataframe with an 'id' column and a 'date' column and fills the
+    value_col missing data as many time series, grouped by 'id' (forwardfills
+    and then backfills).
+    """
+    tmp_df = df.copy()
+    ts = get_ts(tmp_df, values_col=value_col)
+    ts = ts.apply(fill_in_time)
+    tmp_df = tmp_df.set_index([idx_col, 'date'])
+    tmp_df.price = tmp_df.price.fillna(ts.unstack())
+    return tmp_df.reset_index()
+
+
+def fill_with_listings(calendar, listings):
+    """ Fill the prices with the listings prices. """
+
+    listings_price = listings[['id', 'price']].rename(columns={
+        'id': 'listing_id'}).set_index('listing_id').price
+
+    new_cal = calendar.copy()
+    new_cal = new_cal.set_index('listing_id')
+    new_cal.price = new_cal.price.fillna(listings_price)
+
+    return new_cal.reset_index()
+
+
+def create_is_missing(df, cols):
+    """
+    Creates a new feature with 1 in the places where the 'cols' have missing
+    values.
+    """
+    missing_df = df[cols].isnull().astype(int).rename(columns={
+        c: c + '_missing' for c in cols})
+    return df.join(missing_df)
+
+
+def fill_num_cols(listings, listings_cols_df):
+    """
+    Fills the missing data in the numeric features of the listings dataframe.
+    """
+    num_cols = pp.get_column_by_kind(listings_cols_df, 'num_cols')
+    num_listings = listings[num_cols]
+    has_missing = num_listings.columns[
+        num_listings.isnull().sum() > 0].tolist()
+    drop = [
+        'license',
+        'square_feet'
+    ]
+    most_frequent = [
+        'bathrooms',
+        'bedrooms',
+        'beds',
+        'host_listings_count',
+        'host_total_listings_count'
+    ]
+    # Others: mean
+    mean = list(
+        set(listings[has_missing].columns) - set(drop) - set(most_frequent))
+
+    # Create the "is_missing" feature for features with medium missing data
+    feat_cols = num_listings.columns[
+        (num_listings.isnull().mean() > 0.1) &
+        (num_listings.isnull().mean() < 0.9)].tolist()
+    listings = create_is_missing(listings, feat_cols)
+
+    # Drop the features that have too little data
+    drop = list(set(listings.columns).intersection(set(drop)))
+    listings = listings.drop(drop, axis=1)
+    drop = list(set(listings_cols_df.index).intersection(set(drop)))
+    listing_cols_df = listings_cols_df.drop(drop)
+
+    # Fill with the most frequent or the mean
+    listings[most_frequent] = listings[most_frequent].fillna(
+        listings[most_frequent].median())
+    listings[mean] = listings[mean].fillna(listings[mean].mean())
+
+    return listings, listing_cols_df
+
+
+def fill_price_cols(listings, listing_cols_df):
+    """ Fill the missing data for the 'price' columns. """
+
+    # Fill the long-term prices with the daily price
+    week_factor = (listings.weekly_price / listings.price).mean()
+    listings.weekly_price = listings.weekly_price.fillna(
+        listings.price * week_factor)
+
+    month_factor = (listings.monthly_price / listings.price).mean()
+    listings.monthly_price = listings.monthly_price.fillna(
+        listings.price * month_factor)
+
+    # Fill the cleaning fee proportionally to the price
+    cleaning_coef = (listings.cleaning_fee / listings.price).mean()
+    listings.cleaning_fee = listings.cleaning_fee.fillna(
+        cleaning_coef * listings.price)
+
+    # Fill the security deposit with the mean
+    listings.security_deposit = listings.security_deposit.fillna(
+        listings.security_deposit.mean())
+
+    return listings, listing_cols_df
+
+
+

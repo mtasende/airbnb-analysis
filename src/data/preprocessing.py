@@ -1,46 +1,67 @@
 """ A collection of functions to preprocess the data. """
 
-from functools import update_wrapper
 import numpy as np
 import pandas as pd
 from datetime import datetime
+import os
+from src.data import DATA_RAW
+from src.utils import pandify
 
 DOLLAR_SIGN = '\$'
 
 
-def decorator(d):
-    """
-    Make function d a decorator: d wraps a function fn.
-    (Thanks to "Desing of Computer Programs" by Peter Norvig)
-    """
+def transform_prices(calendar, listings, reviews):
+    """ Transforms all the prices in '$x' format to float. """
+    calendar.price = price_to_float(calendar.price)
 
-    def _d(fn):
-        return update_wrapper(d(fn), fn)
+    # Find features that have dollar signs in all non-null entries
+    obj_listings = listings.select_dtypes(include='object')
+    has_dsign = find_str(obj_listings)
+    all_dsign = obj_listings[obj_listings.columns[has_dsign.all()]]
+    price_cols = all_dsign.columns.tolist()
 
-    update_wrapper(_d, d)
-    return _d
+    listings[price_cols] = price_to_float(listings[price_cols])
+
+    return calendar, listings, reviews
 
 
-@decorator
-def pandify(scalar_fun):
-    """
-    The decorated function applies the scalar function to all values
-    and accepts Series and DataFrames.
-    Args:
-        scalar_fun(function): a scalar function
-    Returns:
-        df_fun(function): a matrix/vector function for pandas DFs and Series
-    """
+def transform_booleans(calendar, listings, reviews):
+    """ Transforms all the 'boolean string' values (t/f) to booleans. """
+    # Calendar
+    calendar.available = string2bool(calendar.available)
 
-    def df_fun(df):
-        if isinstance(df, pd.Series):
-            return df.apply(scalar_fun)
-        elif isinstance(df, pd.DataFrame):
-            return df.apply(lambda x: x.apply(scalar_fun))
-        else:
-            return None
+    # Listings
+    tf_any = is_tf(listings).sum() > 0
+    positive_tfs = is_tf(listings).mean()[tf_any]
+    tf_cols = positive_tfs.index.tolist()
+    listings[tf_cols] = string2bool(listings[tf_cols])
 
-    return df_fun
+    return calendar, listings, reviews
+
+
+def transform_dates(calendar, listings, reviews):
+    """ Transforms all the 'date strings' to date format. """
+    # Calendar
+    calendar.date = string2date(calendar.date)
+
+    # Listings
+    is_date = listings.iloc[0].str.contains('\d{4}-\d{2}-\d{2}').fillna(False)
+    date_cols = listings.columns[is_date].tolist()
+    listings[date_cols] = string2date(listings[date_cols])
+
+    # Reviews
+    reviews.date = string2date(reviews.date)
+
+    return calendar, listings, reviews
+
+
+def load_data(raw_dir=DATA_RAW, city='seattle'):
+    """ Loads the raw data. """
+    calendar = pd.read_csv(os.path.join(raw_dir, city, 'calendar.csv'))
+    listings = pd.read_csv(os.path.join(raw_dir, city, 'listings.csv'))
+    reviews = pd.read_csv(os.path.join(raw_dir, city, 'reviews.csv'))
+
+    return calendar, listings, reviews
 
 
 @pandify
@@ -81,3 +102,8 @@ def string2date(text):
     if text is np.nan:
         return np.nan
     return datetime.strptime(text, '%Y-%m-%d')
+
+
+def get_column_by_kind(listing_cols_df, kind):
+    return listing_cols_df.index[
+        listing_cols_df.kind == kind].tolist()

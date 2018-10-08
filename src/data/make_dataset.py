@@ -1,16 +1,8 @@
 # -*- coding: utf-8 -*-
 import click
 import logging
-import os
-import pandas as pd
 import src.data.preprocessing as pp
-
-ROOT_DIR = '../..'
-DATA_DIR = os.path.join(ROOT_DIR, 'data')
-DATA_RAW = os.path.join(DATA_DIR, 'raw')
-DATA_INTERIM = os.path.join(DATA_DIR, 'interim')
-DATA_EXTERNAL = os.path.join(DATA_DIR, 'external')
-DATA_PROCESSED = os.path.join(DATA_DIR, 'processed')
+from src.data import DATA_RAW, DATA_PROCESSED
 
 
 @click.command()
@@ -37,21 +29,7 @@ def create_dataset(raw_dir=DATA_RAW, proc_dir=DATA_PROCESSED):
     Does the same as main, but without 'click'. To be called from other
     functions or notebooks.
     """
-    calendar, listings, reviews = load_data(raw_dir)
-    calendar, listings, reviews = transform_prices(calendar, listings, reviews)
-
-
-
-def load_data(raw_dir, city='seattle'):
-    calendar = pd.read_csv(os.path.join(raw_dir, city, 'calendar.csv'))
-    listings = pd.read_csv(os.path.join(raw_dir, city, 'listings.csv'))
-    reviews = pd.read_csv(os.path.join(raw_dir, city, 'reviews.csv'))
-
-    return calendar, listings, reviews
-
-
-def transform_prices(calendar, listings, reviews):
-    pass
+    calendar, listings, reviews = pp.load_data(raw_dir)
 
 
 if __name__ == '__main__':

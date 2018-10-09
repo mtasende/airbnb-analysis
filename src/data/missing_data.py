@@ -1,10 +1,11 @@
 """ Functions to help filling the missing data. """
 import pandas as pd
 from src.data import preprocessing as pp
-from src.data import SEATTLE_LISTINGS_COLS
+from src.data import SEATTLE_LISTINGS_COLS, SEATTLE_CALENDAR_TEMP, \
+    SEATTLE_LISTINGS_TEMP, SEATTLE_REVIEWS_TEMP
 
 
-def fill_missing(calendar, listings, reviews):
+def fill_missing(calendar, listings, reviews, save_results=False):
     """
     Fills all the missing data that is filledbefore the feature generation.
     There may be some missing data that is filled after the feature generation.
@@ -12,17 +13,30 @@ def fill_missing(calendar, listings, reviews):
     calendar = fill_calendar_na(calendar, listings)
     reviews = fill_reviews_na(reviews)
     listings = fill_listings_na(listings)
+
+    if save_results:
+        pp.save_data(calendar, listings, reviews)
+
     return calendar, listings, reviews
 
 
-def fill_listings_na(listings):
+def fill_listings_na(listings, save_listings_cols=True):
     """ A specific function to fill the listings missing values."""
     listings_cols_df = pd.read_pickle(SEATTLE_LISTINGS_COLS)
     listings, listings_cols_df = fill_num_cols(listings, listings_cols_df)
     listings, listings_cols_df = fill_price_cols(listings, listings_cols_df)
+    listings, listings_cols_df = fill_tf_cols(listings, listings_cols_df)
+    listings, listings_cols_df = fill_free_text_cols(listings,
+                                                     listings_cols_df)
+    listings, listings_cols_df = fill_url_cols(listings, listings_cols_df)
+    listings, listings_cols_df = fill_location_cols(listings, listings_cols_df)
+    listings, listings_cols_df = fill_date_cols(listings, listings_cols_df)
+    listings, listings_cols_df = fill_percent_cols(listings, listings_cols_df)
+    listings, listings_cols_df = fill_time_cols(listings, listings_cols_df)
+    listings, listings_cols_df = fill_cat_cols(listings, listings_cols_df)
 
-
-    listings_cols_df.to_pickle(SEATTLE_LISTINGS_COLS)
+    if save_listings_cols:
+        listings_cols_df.to_pickle(SEATTLE_LISTINGS_COLS)
 
     return listings
 
@@ -131,17 +145,17 @@ def fill_num_cols(listings, listings_cols_df):
     drop = list(set(listings.columns).intersection(set(drop)))
     listings = listings.drop(drop, axis=1)
     drop = list(set(listings_cols_df.index).intersection(set(drop)))
-    listing_cols_df = listings_cols_df.drop(drop)
+    listings_cols_df = listings_cols_df.drop(drop)
 
     # Fill with the most frequent or the mean
     listings[most_frequent] = listings[most_frequent].fillna(
         listings[most_frequent].median())
     listings[mean] = listings[mean].fillna(listings[mean].mean())
 
-    return listings, listing_cols_df
+    return listings, listings_cols_df
 
 
-def fill_price_cols(listings, listing_cols_df):
+def fill_price_cols(listings, listings_cols_df):
     """ Fill the missing data for the 'price' columns. """
 
     # Fill the long-term prices with the daily price
@@ -162,7 +176,71 @@ def fill_price_cols(listings, listing_cols_df):
     listings.security_deposit = listings.security_deposit.fillna(
         listings.security_deposit.mean())
 
-    return listings, listing_cols_df
+    return listings, listings_cols_df
 
 
+def fill_tf_cols(listings, listings_cols_df):
+    """ Fill the missing data for the 'tf' columns. """
+    tf_cols = pp.get_column_by_kind(listings_cols_df, 'tf_cols')
+    listings[tf_cols] = listings[tf_cols].fillna(listings[tf_cols].median())
 
+    return listings, listings_cols_df
+
+
+def fill_free_text_cols(listings, listings_cols_df):
+    free_text_cols = pp.get_column_by_kind(listings_cols_df, 'free_text_cols')
+    listings[free_text_cols] = listings[free_text_cols].fillna('')
+    return listings, listings_cols_df
+
+
+def fill_url_cols(listings, listings_cols_df):
+    """ Fill the missing data for the 'url' columns. """
+    url_cols = pp.get_column_by_kind(listings_cols_df, 'url_cols')
+    listings[url_cols] = listings[url_cols].fillna('')
+    return listings, listings_cols_df
+
+
+def fill_location_cols(listings, listings_cols_df):
+    """ Fill the missing data for the 'location' columns. """
+
+    listings.neighbourhood = listings.neighbourhood.fillna(
+        listings.neighbourhood_cleansed)
+    listings.host_neighbourhood = listings.host_neighbourhood.fillna(
+        listings.neighbourhood)
+    listings.host_location = listings.host_location.fillna(
+        listings.host_location.value_counts().index[0])
+    listings.zipcode = listings.zipcode.fillna('')
+
+    # Fix a mistake
+    listings.loc[listings.zipcode == '99\n98122', 'zipcode'] = '98122'
+
+    return listings, listings_cols_df
+
+
+def fill_date_cols(listings, listings_cols_df):
+    """ Fill the missing data for the 'date' columns. """
+    listings[['first_review', 'last_review']] = listings[
+        ['first_review', 'last_review']].fillna(listings.last_scraped.max())
+    listings = listings[~listings.host_since.isnull()]
+    return listings, listings_cols_df
+
+
+def fill_percent_cols(listings, listings_cols_df):
+    """ Fill the missing data for the 'percent' columns. """
+    percent_cols = pp.get_column_by_kind(listings_cols_df, 'percent_cols')
+    listings[percent_cols] = listings[percent_cols].fillna(
+        listings[percent_cols].mean())
+    return listings, listings_cols_df
+
+
+def fill_time_cols(listings, listings_cols_df):
+    """ Fill the missing data for the 'time' columns. """
+    listings.host_response_time = listings.host_response_time.fillna('no data')
+    return listings, listings_cols_df
+
+
+def fill_cat_cols(listings, listings_cols_df):
+    """ Fill the missing data for the 'categorical simple' columns. """
+    listings.property_type = listings.property_type.fillna(
+        listings.property_type.value_counts().index[0])
+    return listings, listings_cols_df

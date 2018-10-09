@@ -37,3 +37,9 @@ def pandify(scalar_fun):
             return None
 
     return df_fun
+
+
+def show_data(data):
+    print('The data has shape: {}\n'.format(data.shape))
+    print('There is {} missing data!\n'.format(data.isnull().sum().sum()))
+    print(data.head())

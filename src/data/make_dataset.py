@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 import click
 import logging
+import pandas as pd
 import src.data.preprocessing as pp
-from src.data import DATA_RAW, DATA_PROCESSED
+import src.data.missing_data as md
+from src.data import DATA_RAW, DATA_PROCESSED, SEATTLE_CALENDAR_FINAL,\
+    SEATTLE_LISTINGS_FINAL, SEATTLE_REVIEWS_FINAL
 
 
 @click.command()
@@ -21,15 +24,39 @@ def main(input_filepath, output_filepath):
         input_filepath, output_filepath
     ))
     logger.info('making final data set from raw data')
-    create_dataset(input_filepath, output_filepath)
+    create_dataset(input_filepath)
 
 
-def create_dataset(raw_dir=DATA_RAW, proc_dir=DATA_PROCESSED):
+def create_dataset(raw_dir=DATA_RAW):
     """
     Does the same as main, but without 'click'. To be called from other
     functions or notebooks.
     """
     calendar, listings, reviews = pp.load_data(raw_dir)
+    calendar, listings, reviews = pp.transform_all(calendar,
+                                                   listings,
+                                                   reviews,
+                                                   save_results=True)
+    calendar, listings, reviews = md.fill_missing(calendar,
+                                                  listings,
+                                                  reviews,
+                                                  save_results=True)
+    save_to_processed(calendar, listings, reviews)
+
+
+def save_to_processed(calendar, listings, reviews):
+    """ Saves the data to the 'processed' folder. """
+    calendar.to_pickle(SEATTLE_CALENDAR_FINAL)
+    listings.to_pickle(SEATTLE_LISTINGS_FINAL)
+    reviews.to_pickle(SEATTLE_REVIEWS_FINAL)
+
+
+def load_processed():
+    """ Saves the data to the 'processed' folder. """
+    calendar = pd.read_pickle(SEATTLE_CALENDAR_FINAL)
+    listings = pd.read_pickle(SEATTLE_LISTINGS_FINAL)
+    reviews = pd.read_pickle(SEATTLE_REVIEWS_FINAL)
+    return calendar, listings, reviews
 
 
 if __name__ == '__main__':

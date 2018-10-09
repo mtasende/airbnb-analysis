@@ -4,10 +4,27 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 import os
-from src.data import DATA_RAW
+from src.data import DATA_RAW, SEATTLE_CALENDAR_TEMP, SEATTLE_LISTINGS_TEMP,\
+    SEATTLE_REVIEWS_TEMP
 from src.utils import pandify
 
 DOLLAR_SIGN = '\$'
+
+
+def transform_all(calendar, listings, reviews, save_results=False):
+    """ Transforms all the columns. """
+    calendar, listings, reviews = transform_prices(calendar, listings, reviews)
+    calendar, listings, reviews = transform_booleans(calendar, listings,
+                                                     reviews)
+    calendar, listings, reviews = transform_dates(calendar, listings,
+                                                  reviews)
+    calendar, listings, reviews = transform_percent(calendar, listings,
+                                                    reviews)
+
+    if save_results:
+        save_data(calendar, listings, reviews)
+
+    return calendar, listings, reviews
 
 
 def transform_prices(calendar, listings, reviews):
@@ -51,6 +68,14 @@ def transform_dates(calendar, listings, reviews):
 
     # Reviews
     reviews.date = string2date(reviews.date)
+
+    return calendar, listings, reviews
+
+
+def transform_percent(calendar, listings, reviews):
+    """ Transforms all the 'percent strings' to floats. """
+    percent_cols = ['host_response_rate', 'host_acceptance_rate']
+    listings[percent_cols] = percent2num(listings[percent_cols])
 
     return calendar, listings, reviews
 
@@ -107,3 +132,18 @@ def string2date(text):
 def get_column_by_kind(listing_cols_df, kind):
     return listing_cols_df.index[
         listing_cols_df.kind == kind].tolist()
+
+
+@pandify
+def percent2num(text):
+    """ Convert 'percent strings' to floats. """
+    if text is np.nan:
+        return np.nan
+    return float(text[:-1])
+
+
+def save_data(calendar, listings, reviews):
+    """ Save the usual variables to pickles in the interim folder. """
+    calendar.to_pickle(SEATTLE_CALENDAR_TEMP)
+    listings.to_pickle(SEATTLE_LISTINGS_TEMP)
+    reviews.to_pickle(SEATTLE_REVIEWS_TEMP)

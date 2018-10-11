@@ -1,8 +1,9 @@
 import os
 from pathlib import Path
+import src
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = Path(MODULE_DIR).parent.parent
+ROOT_DIR = str(Path(MODULE_DIR).parent.parent)
 DATA_DIR = os.path.join(ROOT_DIR, 'data')
 DATA_RAW = os.path.join(DATA_DIR, 'raw')
 DATA_INTERIM = os.path.join(DATA_DIR, 'interim')

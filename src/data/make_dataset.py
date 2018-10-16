@@ -23,7 +23,7 @@ def main(input_filepath, output_filepath):
     logger.info('\nConverting from: {}\nConverting to: {}'.format(
         input_filepath, output_filepath
     ))
-    logger.info('making final data set from raw data')
+    logger.info('Making the final data set from raw data')
     create_dataset(input_filepath)
 
 
@@ -32,16 +32,24 @@ def create_dataset(raw_dir=DATA_RAW):
     Does the same as main, but without 'click'. To be called from other
     functions or notebooks.
     """
+    logger = logging.getLogger(__name__)
+
+    logger.info('Loading the raw data')
     calendar, listings, reviews = pp.load_data(raw_dir)
+
+    logger.info('Preprocessing the data')
     calendar, listings, reviews = pp.transform_all(calendar,
                                                    listings,
                                                    reviews,
                                                    save_results=True)
+    logger.info('Filling the missing data')
     calendar, listings, reviews = md.fill_missing(calendar,
                                                   listings,
                                                   reviews,
                                                   save_results=True)
+    logger.info('Saving the data')
     save_to_processed(calendar, listings, reviews)
+    logger.info('The processed data is ready.')
 
 
 def save_to_processed(calendar, listings, reviews):

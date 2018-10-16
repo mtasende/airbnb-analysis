@@ -6,11 +6,19 @@ This project was created using Python 3. To create the conda environment, and st
 ```
 conda env create -f data.yml
 source activate data
+python -m ipykernel install --user --name data --display-name "data"
+```
+The notebook `007-mt-q4-best-value.ipynb` uses a different environment, called geo
+(geo has functions to show the maps of Seattle). It can be installed this way:
+```
+conda env create -f geo.yml
+source activate geo
+python -m ipykernel install --user --name geo --display-name "geo"
 ```
 No extra libraries are needed.
 
 ## Project Motivation
-Discuss what your project is about, and what interested you in pursuing the project.
+This project is based on Kaggle's ["Seattle AirBnB Open Data"](https://www.kaggle.com/airbnb/seattle). The aim is to find insights that help a person decide how to choose a place, through AirBnB, to stay in Seattle, based on that dataset.
 
 ## File Descriptions
 
@@ -65,11 +73,18 @@ Discuss what your project is about, and what interested you in pursuing the proj
 
 
 ## How to interact with the project
-The results of the analysis can be found in the _reports_ folder.
-Also, the notebooks in the _notebooks_ folder can be run, in order, to obtain the analysis results.
-The `scratchpad` folder contains notebooks that should be ignored by the regular user.
+The results of the analysis can be found in the `reports` folder.
+
+Also, the notebooks in the `notebooks` folder can be run, in order, to obtain the analysis results. (The `scratchpad` folder contains notebooks that should be ignored. They are just used to record the process of development).
+
+Finally, you can run the script `(data)hostname$ python src/data/make_dataset.py` to create and preprocess the dataset, from the raw data. That is not necessary for running the notebooks as they already can create the dataset (you will normally find a commented cell that creates the dataset in the notebooks; just uncomment it).
+
 
 ## Licensing, Authors, Acknowledgements
 Code released under the [MIT](https://github.com/mtasende/airbnb-analysis/blob/master/LICENSE) license.
+
+This project was authored by Miguel Tasende.
+
+Thanks to Kaggle and AirBnB for the ["Seattle AirBnB Open Data"](https://www.kaggle.com/airbnb/seattle) dataset.
 
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>

@@ -1,5 +1,5 @@
 # AirBnB Analysis
-Analysis of open AirBnB data.
+Analysis of open AirBnB data. This project has an associated [Medium Story](https://medium.com/@miguel.tasende/this-data-will-make-you-enjoy-the-best-airbnb-vacations-of-your-life-47858d00895e).
 
 ## Installations
 This project was created using Python 3. To create the conda environment, and start working:

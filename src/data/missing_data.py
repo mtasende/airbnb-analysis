@@ -47,7 +47,17 @@ def fill_reviews_na(reviews):
 
 
 def fill_calendar_na(calendar, listings):
-    """ A specific function to fill the calendar missing values."""
+    """
+    A specific function to fill the calendar missing values.
+
+    Args:
+        calendar (pandas.DataFrame): Contains prices and availabilities in
+            time for the listings.
+        listings (pandas.DataFrame): Contains the static features of each
+            listing.
+    Returns:
+        pandas.DataFrame: The filled calendar.
+    """
     new_cal = calendar.copy()
     new_cal = fill_df_in_time(new_cal)
     return fill_with_listings(new_cal, listings)
@@ -77,9 +87,13 @@ def get_ts(df, values_col='price'):
 
 def fill_df_in_time(df, idx_col='listing_id', value_col='price'):
     """
-    Takes a dataframe with an 'id' column and a 'date' column and fills the
-    value_col missing data as many time series, grouped by 'id' (forwardfills
-    and then backfills).
+    Fills an entire dataframe in time, by forward filling and then backfilling.
+    It first groups the dataframe by idx_col.
+    The df must have a 'date' column with timestamps.
+    Args:
+        df (pandas.DataFrame): The dataframe to fill
+        idx_col (str): A column name to group by.
+        value_col (str): The name of the column that has the values to fill.
     """
     tmp_df = df.copy()
     ts = get_ts(tmp_df, values_col=value_col)
@@ -90,8 +104,18 @@ def fill_df_in_time(df, idx_col='listing_id', value_col='price'):
 
 
 def fill_with_listings(calendar, listings):
-    """ Fill the prices with the listings prices. """
+    """
+    Fills the missing prices in the calendar dataframe,
+    with the prices available in the listings dataframe.
 
+    Args:
+        calendar (pandas.DataFrame): Contains prices and availabilities in
+            time for the listings.
+        listings (pandas.DataFrame): Contains the static features of each
+            listing.
+    Returns:
+        pandas.DataFrame: The filled calendar.
+    """
     listings_price = listings[['id', 'price']].rename(columns={
         'id': 'listing_id'}).set_index('listing_id').price
 
@@ -104,8 +128,14 @@ def fill_with_listings(calendar, listings):
 
 def create_is_missing(df, cols):
     """
-    Creates a new feature with 1 in the places where the 'cols' have missing
+    Creates a new column with 1 in the places where the 'cols' have missing
     values.
+
+    Args:
+        df (pandas.DataFrame): Any dataframe with missing data.
+        cols (list(str)): The names of the columns to use.
+    Returns:
+        pandas.DataFrame: The same as df but with the added columns.
     """
     missing_df = df[cols].isnull().astype(int).rename(columns={
         c: c + '_missing' for c in cols})
@@ -115,6 +145,15 @@ def create_is_missing(df, cols):
 def fill_num_cols(listings, listings_cols_df):
     """
     Fills the missing data in the numeric features of the listings dataframe.
+
+    Args:
+        listings (pandas.DataFrame): Contains the static features of each
+            listing.
+        num_cols (list(str)): The list of numeric column names to fill.
+    Returns:
+        pandas.DataFrame: The filled 'listings' dataframe.
+        pandas.DataFrame: A dataframe with the 'kind' of
+            columns that each column is.
     """
     num_cols = pp.get_column_by_kind(listings_cols_df, 'num_cols')
     num_listings = listings[num_cols]
@@ -156,8 +195,17 @@ def fill_num_cols(listings, listings_cols_df):
 
 
 def fill_price_cols(listings, listings_cols_df):
-    """ Fill the missing data for the 'price' columns. """
+    """
+    Fill the missing data in the listings dataframe, for the 'price' columns.
 
+    Args:
+        listings (pandas.DataFrame): Contains the static features of each
+            listing.
+        listings_cols_df (pandas.DataFrame): A dataframe with the 'kind' of
+            columns that each column is.
+    Returns:
+        The same arguments, with listings filled.
+    """
     # Fill the long-term prices with the daily price
     week_factor = (listings.weekly_price / listings.price).mean()
     listings.weekly_price = listings.weekly_price.fillna(
@@ -180,7 +228,17 @@ def fill_price_cols(listings, listings_cols_df):
 
 
 def fill_tf_cols(listings, listings_cols_df):
-    """ Fill the missing data for the 'tf' columns. """
+    """
+    Fill the missing data for the 'tf' columns.
+
+    Args:
+        listings (pandas.DataFrame): Contains the static features of each
+            listing.
+        listings_cols_df (pandas.DataFrame): A dataframe with the 'kind' of
+            columns that each column is.
+    Returns:
+        The same arguments, with listings filled.
+    """
     tf_cols = pp.get_column_by_kind(listings_cols_df, 'tf_cols')
     listings[tf_cols] = listings[tf_cols].fillna(listings[tf_cols].median())
 
@@ -188,21 +246,51 @@ def fill_tf_cols(listings, listings_cols_df):
 
 
 def fill_free_text_cols(listings, listings_cols_df):
+    """
+    Fill the missing data for the 'free text' columns.
+
+    Args:
+        listings (pandas.DataFrame): Contains the static features of each
+            listing.
+        listings_cols_df (pandas.DataFrame): A dataframe with the 'kind' of
+            columns that each column is.
+    Returns:
+        The same arguments, with listings filled.
+    """
     free_text_cols = pp.get_column_by_kind(listings_cols_df, 'free_text_cols')
     listings[free_text_cols] = listings[free_text_cols].fillna('')
     return listings, listings_cols_df
 
 
 def fill_url_cols(listings, listings_cols_df):
-    """ Fill the missing data for the 'url' columns. """
+    """
+    Fill the missing data for the 'url' columns.
+
+    Args:
+        listings (pandas.DataFrame): Contains the static features of each
+            listing.
+        listings_cols_df (pandas.DataFrame): A dataframe with the 'kind' of
+            columns that each column is.
+    Returns:
+        The same arguments, with listings filled.
+    """
     url_cols = pp.get_column_by_kind(listings_cols_df, 'url_cols')
     listings[url_cols] = listings[url_cols].fillna('')
     return listings, listings_cols_df
 
 
 def fill_location_cols(listings, listings_cols_df):
-    """ Fill the missing data for the 'location' columns. """
+    """
+    Fill the missing data for the 'location' columns.
 
+    Args:
+        listings (pandas.DataFrame): Contains the static features of each
+            listing.
+        listings_cols_df (pandas.DataFrame): A dataframe with the 'kind' of
+            columns that each column is.
+    Returns:
+        The same arguments, with listings filled.
+    """
     listings.neighbourhood = listings.neighbourhood.fillna(
         listings.neighbourhood_cleansed)
     listings.host_neighbourhood = listings.host_neighbourhood.fillna(
@@ -218,7 +306,17 @@ def fill_location_cols(listings, listings_cols_df):
 
 
 def fill_date_cols(listings, listings_cols_df):
-    """ Fill the missing data for the 'date' columns. """
+    """
+    Fill the missing data for the 'date' columns.
+
+    Args:
+        listings (pandas.DataFrame): Contains the static features of each
+            listing.
+        listings_cols_df (pandas.DataFrame): A dataframe with the 'kind' of
+            columns that each column is.
+    Returns:
+        The same arguments, with listings filled.
+    """
     listings[['first_review', 'last_review']] = listings[
         ['first_review', 'last_review']].fillna(listings.last_scraped.max())
     listings = listings[~listings.host_since.isnull()]
@@ -226,7 +324,17 @@ def fill_date_cols(listings, listings_cols_df):
 
 
 def fill_percent_cols(listings, listings_cols_df):
-    """ Fill the missing data for the 'percent' columns. """
+    """
+    Fill the missing data for the 'percent' columns.
+
+    Args:
+        listings (pandas.DataFrame): Contains the static features of each
+            listing.
+        listings_cols_df (pandas.DataFrame): A dataframe with the 'kind' of
+            columns that each column is.
+    Returns:
+        The same arguments, with listings filled.
+    """
     percent_cols = pp.get_column_by_kind(listings_cols_df, 'percent_cols')
     listings[percent_cols] = listings[percent_cols].fillna(
         listings[percent_cols].mean())
@@ -234,13 +342,33 @@ def fill_percent_cols(listings, listings_cols_df):
 
 
 def fill_time_cols(listings, listings_cols_df):
-    """ Fill the missing data for the 'time' columns. """
+    """
+    Fill the missing data for the 'time' columns.
+
+    Args:
+        listings (pandas.DataFrame): Contains the static features of each
+            listing.
+        listings_cols_df (pandas.DataFrame): A dataframe with the 'kind' of
+            columns that each column is.
+    Returns:
+        The same arguments, with listings filled.
+    """
     listings.host_response_time = listings.host_response_time.fillna('no data')
     return listings, listings_cols_df
 
 
 def fill_cat_cols(listings, listings_cols_df):
-    """ Fill the missing data for the 'categorical simple' columns. """
+    """
+    Fill the missing data for the 'categorical simple' columns.
+
+    Args:
+        listings (pandas.DataFrame): Contains the static features of each
+            listing.
+        listings_cols_df (pandas.DataFrame): A dataframe with the 'kind' of
+            columns that each column is.
+    Returns:
+        The same arguments, with listings filled.
+    """
     listings.property_type = listings.property_type.fillna(
         listings.property_type.value_counts().index[0])
     return listings, listings_cols_df

@@ -2,6 +2,7 @@
 
 from functools import update_wrapper
 import pandas as pd
+import scipy.cluster.hierarchy as sch
 
 
 def decorator(d):
@@ -60,3 +61,19 @@ def common_values(series1, series2):
     print('Total set 2: {}'.format(len(values2)))
     print('Not in set 1: {}'.format(len(no_values1)))
     print('Total: {}'.format(len(total)))
+
+
+def cluster_corr(ts):
+    """
+    Clusters the time series according to their correlation.
+    Part of the code was taken from here:
+    https://github.com/TheLoneNut/CorrelationMatrixClustering/blob/master/
+    CorrelationMatrixClustering.ipynb
+    """
+    X = ts.corr().fillna(0).values
+    d = sch.distance.pdist(X)
+    L = sch.linkage(d, method='complete')
+    ind = sch.fcluster(L, 0.5*d.max(), 'distance')
+    columns = [ts.columns.tolist()[i] for i in list((np.argsort(ind)))]
+    clmts = ts.reindex_axis(columns, axis=1)
+    return clmts, ind

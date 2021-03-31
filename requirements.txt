@@ -82,7 +82,7 @@ lesscpy==0.13.0
 lightgbm==2.1.2
 llvmlite==0.23.1
 locket==0.2.0
-lxml==4.2.1
+lxml==4.6.3
 MarkupSafe==1.0
 matplotlib==2.2.2
 mccabe==0.6.1
